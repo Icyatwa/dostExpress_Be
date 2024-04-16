@@ -45,14 +45,11 @@ const getRide = async (req, res) => {
 const createRide = async (req, res) => {
   const
     {
-      userName,
-      phoneNumber,
-      carModel,
+      bus,
       licensePlates,
-      carColor,
+      driverName,
       location,
       destination,
-      day,
       time,
       pickup,
       dropoff,
@@ -62,24 +59,12 @@ const createRide = async (req, res) => {
 
   let emptyFields = []
 
-  if(!userName) {
-    emptyFields.push('userName')
-  }
-
-  if(!phoneNumber) {
-    emptyFields.push('phoneNumber')
-  }
-
-  if(!carModel) {
-    emptyFields.push('carModel')
-  }
-
   if(!licensePlates) {
     emptyFields.push('licensePlates')
   }
 
-  if(!carColor) {
-    emptyFields.push('carColor')
+  if(!driverName) {
+    emptyFields.push('driverName')
   }
 
   if(!location) {
@@ -88,10 +73,6 @@ const createRide = async (req, res) => {
 
   if(!destination) {
     emptyFields.push('destination')
-  }
-
-  if(!day) {
-    emptyFields.push('day')
   }
 
   if(!time) {
@@ -123,20 +104,17 @@ const createRide = async (req, res) => {
     const user_id = req.user._id
     const ride = await Ride.create
         ({
-            userName,
-            phoneNumber,
-            carModel,
-            licensePlates,
-            carColor,
-            location,
-            destination,
-            day,
-            time,
-            pickup,
-            dropoff,
-            seats,
-            price,
-            user_id
+          bus,
+          licensePlates,
+          driverName,
+          location,
+          destination,
+          time,
+          pickup,
+          dropoff,
+          seats,
+          price,
+          user_id
         })
     res.status(200).json(ride)
   } catch (error) {

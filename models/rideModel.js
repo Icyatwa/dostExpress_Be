@@ -3,57 +3,19 @@ const mongoose = require('mongoose')
 const Schema = mongoose.Schema
 
 const rideSchema = new Schema({
-  userName: {
-    type: String,
+  bus: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Bus',
   },
-
-  phoneNumber: {
-    type: String,
-  },
-
-  carModel: {
-    type: String,
-  },
-
-  licensePlates: {
-    type: String,
-  },
-
-  carColor: {
-    type: String,
-  },
-
-  location: {
-    type: String,
-  },
-
-  destination: {
-    type: String,
-  },
-
-  day: {
-    type: Date,
-  },
-
-  time: {
-    type: String,
-  },
-
-  pickup: {
-    type: String,
-  },
-
-  dropoff: {
-    type: String,
-  },
-
-  seats: {
-    type: Number,
-  },
-
-  price: {
-    type: Number,
-  },
+  licensePlates: { type: String, required: true },
+  driverName: { type: String, required: true },
+  time: { type: String, required: true },
+  location: { type: String, required: true },
+  destination: { type: String, required: true },
+  pickup: { type: String, required: true },
+  dropoff: { type: String, required: true },
+  seats: { type: String, required: true },
+  price: { type: String, required: true },
 
   user_id: {
     type: String,
