@@ -45,9 +45,8 @@ const getRide = async (req, res) => {
 const createRide = async (req, res) => {
   const
     {
-      bus,
-      licensePlates,
       driverName,
+      licensePlates,
       location,
       destination,
       time,
@@ -59,12 +58,12 @@ const createRide = async (req, res) => {
 
   let emptyFields = []
 
-  if(!licensePlates) {
-    emptyFields.push('licensePlates')
-  }
-
   if(!driverName) {
     emptyFields.push('driverName')
+  }
+
+  if(!licensePlates) {
+    emptyFields.push('licensePlates')
   }
 
   if(!location) {
@@ -104,9 +103,8 @@ const createRide = async (req, res) => {
     const user_id = req.user._id
     const ride = await Ride.create
         ({
-          bus,
-          licensePlates,
           driverName,
+          licensePlates,
           location,
           destination,
           time,
@@ -175,43 +173,6 @@ const updateRide = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 }
-
-// const pickRide = async (req, res) => {
-//   const { id } = req.params;
-
-//   try {
-//     const ride = await Ride.findById(id);
-
-//     if (!ride) {
-//       return res.status(404).json({ error: 'No such ride' });
-//     }
-
-//     // Update ride status to 'picked'
-//     ride.status = 'picked';
-//     await ride.save();
-
-//     // Notify the driver (you can use a real-time solution like WebSockets)
-//     notifyDriver(ride);
-
-//     res.status(200).json({ message: 'Ride picked successfully' });
-//   } catch (error) {
-//     console.error('Error picking ride:', error);
-//     res.status(500).json({ error: 'Internal Server Error' });
-//   }
-// };
-
-// // Function to notify the driver
-// const notifyDriver = (ride) => {
-//   // Implement a real-time notification mechanism to notify the driver
-//   // You can use WebSockets, Firebase Cloud Messaging (FCM), etc.
-//   // For simplicity, let's assume you have a function to send notifications
-//   // For example, you can use Socket.io for real-time communication
-//   // or send a push notification using FCM.
-
-//   // Example using Socket.io (you need to set up Socket.io in your app)
-//   io.to(driverRoomId).emit('ridePicked', { rideId: ride._id, driverId: ride.driverId });
-// };
-
 
 
 module.exports = {
