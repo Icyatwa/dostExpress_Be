@@ -1,51 +1,13 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
-const Schema = mongoose.Schema
+const Schema = mongoose.Schema;
 
 const rideSchema = new Schema({
+  bus: { type: Schema.Types.ObjectId, ref: 'Bus', required: true },
+  stations: [{ type: String, required: true }],
+  time: { type: String },
+  price: { type: Number },
+  user_id: { type: String, required: true },
+}, { timestamps: true });
 
-  licensePlates: {
-    type: String,
-  },
-
-  driverName: {
-    type: String,
-  },
-
-  location: {
-    type: String,
-  },
-
-  destination: {
-    type: String,
-  },
-
-  time: {
-    type: String,
-  },
-
-  pickup: {
-    type: String,
-  },
-
-  dropoff: {
-    type: String,
-  },
-
-  seats: {
-    type: Number,
-  },
-
-  price: {
-    type: Number,
-  },
-
-  user_id: {
-    type: String,
-    required: true
-  },
-  
-  // status: { type: String, default: 'pending' },
-}, { timestamps: true })
-
-module.exports = mongoose.model('Ride', rideSchema)
+module.exports = mongoose.model('Ride', rideSchema);

@@ -1,18 +1,21 @@
-const Ride = require('../models/rideModel')
-const mongoose = require('mongoose')
+const Bus = require('../models/busModel');
+const Ride = require('../models/rideModel');
+const mongoose = require('mongoose');
 
 
-// get all Rides
 const getRides = async (req, res) => {
-  const user_id = req.user._id
+  const user_id = req.user._id;
 
-  const rides = await Ride.find({user_id})
-    .sort({createdAt: -1})
+  try {
+    const rides = await Ride.find({ user_id }).populate('bus').sort({ createdAt: -1 }); // Populate the 'bus' field
+    res.status(200).json(rides);
+  } catch (error) {
+    console.error('Error fetching rides:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
-  res.status(200).json(rides)
-}
 
-// Get all rides for unauthenticated users
 const getAllRides = async (req, res) => {
   try {
     const rides = await Ride.find().sort({ createdAt: -1 });
@@ -23,7 +26,6 @@ const getAllRides = async (req, res) => {
   }
 };
 
-// get a single ride
 const getRide = async (req, res) => {
   const { id } = req.params
 
@@ -40,87 +42,161 @@ const getRide = async (req, res) => {
   res.status(200).json(ride)
 }
 
+// const createRide = async (req, res) => {
+//   const {
+//     stations,
+//     time,
+//     price,
+//     bus_id
+//   } = req.body;
 
-// create new ride
+//   let emptyFields = [];
+
+//   if (!stations || stations.length < 2) {
+//     emptyFields.push('stations');
+//   }
+
+//   if (!time) {
+//     emptyFields.push('time');
+//   }
+
+//   if (!price) {
+//     emptyFields.push('price');
+//   }
+
+//   if (!bus_id) {
+//     emptyFields.push('bus_id');
+//   }
+
+//   if (emptyFields.length > 0) {
+//     return res.status(400).json({ error: 'Please fill in all the fields', emptyFields });
+//   }
+
+//   try {
+//     const selectedBus = await Bus.findById(bus_id);
+
+//     if (!selectedBus) {
+//       return res.status(404).json({ error: 'Selected bus not found' });
+//     }
+
+//     const user_id = req.user._id;
+//     const rides = [];
+
+//     for (let i = 0; i < stations.length - 1; i++) {
+//       for (let j = i + 1; j < stations.length; j++) {
+//         const ride1 = await Ride.create({
+//           bus: selectedBus,
+//           stations: [stations[i], stations[j]],
+//           time,
+//           price,
+//           user_id
+//         });
+//         rides.push(ride1);
+
+//         const ride2 = await Ride.create({
+//           bus: selectedBus,
+//           stations: [stations[j], stations[i]],
+//           time,
+//           price,
+//           user_id
+//         });
+//         rides.push(ride2);
+//       }
+//     }
+
+//     res.status(200).json(rides);
+//   } catch (error) {
+//     res.status(400).json({ error: error.message });
+//   }
+// };
+
+
 const createRide = async (req, res) => {
-  const
-    {
-      driverName,
-      licensePlates,
-      location,
-      destination,
-      time,
-      pickup,
-      dropoff,
-      seats,
-      price
-    } = req.body
+  const {
+    stations,
+    time,
+    price,
+    bus_id
+  } = req.body;
 
-  let emptyFields = []
+  // Validation for empty fields
+  let emptyFields = [];
 
-  if(!driverName) {
-    emptyFields.push('driverName')
+  if (!stations || stations.length < 2) {
+    emptyFields.push('stations');
   }
 
-  if(!licensePlates) {
-    emptyFields.push('licensePlates')
+  if (!time) {
+    emptyFields.push('time');
   }
 
-  if(!location) {
-    emptyFields.push('location')
+  if (!price) {
+    emptyFields.push('price');
   }
 
-  if(!destination) {
-    emptyFields.push('destination')
+  if (!bus_id) {
+    emptyFields.push('bus_id');
   }
 
-  if(!time) {
-    emptyFields.push('time')
+  if (emptyFields.length > 0) {
+    return res.status(400).json({ error: 'Please fill in all the fields', emptyFields });
   }
 
-  if(!pickup) {
-    emptyFields.push('pickup')
-  }
-
-  if(!dropoff) {
-    emptyFields.push('dropoff')
-  }
-
-  if(!seats) {
-    emptyFields.push('seats')
-  }
-
-  if(!price) {
-    emptyFields.push('price')
-  }
-
-  if(emptyFields.length > 0) {
-    return res.status(400).json({ error: 'Please fill in all the fields', emptyFields })
-  }
-
-  // add doc to db
   try {
-    const user_id = req.user._id
-    const ride = await Ride.create
-        ({
-          driverName,
-          licensePlates,
-          location,
-          destination,
+    // Fetch the selected bus
+    const selectedBus = await Bus.findById(bus_id);
+
+    if (!selectedBus) {
+      return res.status(404).json({ error: 'Selected bus not found' });
+    }
+
+    const user_id = req.user._id;
+    const rides = [];
+
+    // Check availability of seats for each direction separately
+    const existingRidesFromAB = await Ride.find({ bus: selectedBus, stations: [stations[0], stations[1]] });
+    const existingRidesFromBA = await Ride.find({ bus: selectedBus, stations: [stations[1], stations[0]] });
+
+    if (existingRidesFromAB.length >= selectedBus.capacity) {
+      return res.status(400).json({ error: 'Seats are full from station A to station B' });
+    }
+
+    if (existingRidesFromBA.length >= selectedBus.capacity) {
+      return res.status(400).json({ error: 'Seats are full from station B to station A' });
+    }
+
+    // Create rides for both directions
+    for (let i = 0; i < stations.length - 1; i++) {
+      for (let j = i + 1; j < stations.length; j++) {
+        const ride1 = await Ride.create({
+          bus: selectedBus,
+          stations: [stations[i], stations[j]],
           time,
-          pickup,
-          dropoff,
-          seats,
           price,
           user_id
-        })
-    res.status(200).json(ride)
-  } catch (error) {
-    res.status(400).json({error: error.message})
-  }
-}
+        });
+        rides.push(ride1);
 
-// delete a ride
+        const ride2 = await Ride.create({
+          bus: selectedBus,
+          stations: [stations[j], stations[i]],
+          time,
+          price,
+          user_id
+        });
+        rides.push(ride2);
+      }
+    }
+
+    res.status(200).json(rides);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+
+
+
 const deleteRide = async (req, res) => {
   const { id } = req.params
 
@@ -137,7 +213,6 @@ const deleteRide = async (req, res) => {
   res.status(200).json(ride)
 }
 
-// update a ride
 const updateRide = async (req, res) => {
   const { id } = req.params
 
@@ -145,26 +220,15 @@ const updateRide = async (req, res) => {
     return res.status(404).json({error: 'No such ride'})
   }
 
-  // const ride = await Ride.findOneAndUpdate({_id: id}, {
-  //   ...req.body
-  // })
-
-  // if (!ride) {
-  //   return res.status(400).json({error: 'No such ride'})
-  // }
-
   try {
-    // Find the existing ride by ID
     const existingRide = await Ride.findById(id);
 
     if (!existingRide) {
       return res.status(404).json({ error: 'No such ride' });
     }
 
-    // Update ride properties with new values from the request body
     Object.assign(existingRide, req.body);
 
-    // Save the updated ride to the database
     const updatedRide = await existingRide.save();
 
     res.status(200).json(updatedRide);

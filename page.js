@@ -600,3 +600,18 @@ export const useSignup = () => {
   return { signup, isLoading, error }
 }
 )
+
+Auth(
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [companyName, setCompanyName] = useState(''); // Add companyName state
+    const [accessCode, setAccessCode] = useState(''); // Add accessCode state
+    const { signup, error } = useSignup();
+  
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+  
+      // Call signup function with companyName and accessCode
+      await signup(email, password, companyName, accessCode);
+    };
+)
