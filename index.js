@@ -5,15 +5,14 @@ const mongoose = require('mongoose')
 const cors = require('cors');
 const userRoutes = require('./routes/user')
 const busRoutes = require('./routes/bus')
-const bookingRoutes = require('./routes/bookingRoutes')
 const rideRoutes = require('./routes/ride')
 
 // express app
 const app = express()
 
 // middleware
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
 
 
 app.use((req, res, next) => {
@@ -24,7 +23,6 @@ app.use((req, res, next) => {
 // routes
 app.use('/api/user', userRoutes)
 app.use('/api/bus', busRoutes)
-app.use('/api/booking', bookingRoutes)
 app.use('/api/ride', rideRoutes)
 
 // connect to db

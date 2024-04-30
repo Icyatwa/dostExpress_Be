@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 exports.createBooking = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-  
+
   try {
     const { rideId, passenger, selectedPassengers } = req.body;
 
