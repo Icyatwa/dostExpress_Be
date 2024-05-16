@@ -22,10 +22,15 @@ app.use((req, res, next) => {
 })
 
 // routes
-app.use('/api/user', userRoutes)
-app.use('/api/bus', busRoutes)
-app.use('/api/rides', rideRoutes)
-app.use('/api/details', busDetailsRoutes)
+// app.use('/api/user', userRoutes)
+// app.use('/api/bus', busRoutes)
+// app.use('/api/rides', rideRoutes)
+// app.use('/api/details', busDetailsRoutes)
+
+app.use('/api/taximan', userRoutes)
+app.use('/api/cabs', busRoutes)
+app.use('/api/taxis', rideRoutes)
+app.use('/api/cabdetails', busDetailsRoutes)
 
 // connect to db
 mongoose.connect(process.env.MONGO_URI)
