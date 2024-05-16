@@ -6,6 +6,7 @@ const cors = require('cors');
 const userRoutes = require('./routes/user')
 const busRoutes = require('./routes/bus')
 const rideRoutes = require('./routes/ride')
+const busDetailsRoutes = require('./routes/busDetails');
 
 // express app
 const app = express()
@@ -23,12 +24,12 @@ app.use((req, res, next) => {
 // routes
 app.use('/api/user', userRoutes)
 app.use('/api/bus', busRoutes)
-app.use('/api/ride', rideRoutes)
+app.use('/api/rides', rideRoutes)
+app.use('/api/details', busDetailsRoutes)
 
 // connect to db
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    // listen for requests
     app.listen(process.env.PORT, () => {
       console.log('connected to db & listening on port', process.env.PORT)
     })

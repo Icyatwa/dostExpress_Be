@@ -1,12 +1,12 @@
 const Bus = require('../models/busModel');
 const Ride = require('../models/rideModel');
 const mongoose = require('mongoose');
+const BusDetails = require('../models/busDetailsModel')
 
 const getRides = async (req, res) => {
   const user_id = req.user._id;
-
   try {
-    const rides = await Ride.find({ user_id }).populate('bus').sort({ createdAt: -1 }); // Populate the 'bus' field
+    const rides = await Ride.find({ user_id }).populate('bus').sort({ createdAt: -1 });
     res.status(200).json(rides);
   } catch (error) {
     console.error('Error fetching rides:', error);
@@ -14,9 +14,23 @@ const getRides = async (req, res) => {
   }
 };
 
+const getRideById = async (req, res) => {
+  const rideId = req.params.rideId;
+  try {
+    const ride = await Ride.findById(rideId).populate('bus');
+    if (!ride) {
+      return res.status(404).json({ message: 'Ride not found' });
+    }
+    res.status(200).json(ride);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
 const getAllRides = async (req, res) => {
   try {
-    const rides = await Ride.find().sort({ createdAt: -1 });
+    const rides = await Ride.find().populate('bus').sort({ createdAt: -1 });
     res.status(200).json(rides);
   } catch (error) {
     console.error('Error fetching rides:', error);
@@ -26,22 +40,17 @@ const getAllRides = async (req, res) => {
 
 const getRide = async (req, res) => {
   const { id } = req.params
-
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(404).json({error: 'No such ride'})
   }
-
-  const ride = await Ride.findById(id)
-
+  const ride = await Ride.findById(id).populate('bus')
   if (!ride) {
     return res.status(404).json({error: 'No such ride'})
   }
-  
   res.status(200).json(ride)
 }
 
 const routePrices = {
-  // Existing routes and prices
   "Nyabugogo-Huye": 3700,
   "Misove-Base": 2500,
   "Kigali-Misove": 4500,
@@ -49,14 +58,12 @@ const routePrices = {
   "Kigali-Huye": 1500,
   "Kigali-Gisagara": 2500,
   "Huye-Gisagara": 500,
-  // New routes and prices
   "Nyabugogo-Gicumbi-Gatuna": 1082,
   "Rukomo-Gicumbi-Gatuna": 1038,
   "Gicumbi-Base": 1462,
   "Gicumbi-Rutare": 1462,
   "Gicumbi-Gakenke": 2003,
   "Gicumbi-Kivuye": 2016,
-  // other routes...
 };
 
 const calculateRidePrice = (stations) => {
@@ -81,6 +88,7 @@ const calculateRidePrice = (stations) => {
 
 const stations = ['Kigali', 'Huye'];
 const price = calculateRidePrice(stations);
+
 if (price !== null) {
   console.log('Price:', price);
 } else {
@@ -115,6 +123,7 @@ const createRide = async (req, res) => {
 
     const user_id = req.user._id;
     const rides = [];
+    const rideGroupId = new mongoose.Types.ObjectId();
 
     const existingRidesFromAB = await Ride.find({ bus: selectedBus, stations: [stations[0], stations[1]] });
     const existingRidesFromBA = await Ride.find({ bus: selectedBus, stations: [stations[1], stations[0]] });
@@ -128,28 +137,27 @@ const createRide = async (req, res) => {
     }
 
     if (schedule.type === 'interval') {
-      // Calculate the interval in milliseconds based on the provided frequency and interval unit
       let intervalMilliseconds;
       if (schedule.intervalUnit === 'minutes') {
-        intervalMilliseconds = schedule.frequency * 60000; // 1 minute = 60000 milliseconds
+        intervalMilliseconds = schedule.frequency * 60000;
       } else if (schedule.intervalUnit === 'hours') {
-        intervalMilliseconds = schedule.frequency * 3600000; // 1 hour = 3600000 milliseconds
+        intervalMilliseconds = schedule.frequency * 3600000;
       }
 
-      // Create rides immediately and then start interval for subsequent rides
       const createRides = async () => {
+        
         for (let i = 0; i < stations.length - 1; i++) {
           for (let j = i + 1; j < stations.length; j++) {
             const ridePrice = price || calculateRidePrice([stations[i], stations[j]]);
 
-            // Create ride objects
             const ride1 = await Ride.create({
               bus: selectedBus,
               stations: [stations[i], stations[j]],
               time,
               price: ridePrice ? ridePrice : null,
               user_id,
-              publishSchedule: [] // Since this is an interval-based ride, we don't need a specific publish schedule
+              rideGroupId,
+              publishSchedule: []
             });
             rides.push(ride1);
 
@@ -159,35 +167,39 @@ const createRide = async (req, res) => {
               time,
               price: ridePrice ? ridePrice : null,
               user_id,
-              publishSchedule: [] // Since this is an interval-based ride, we don't need a specific publish schedule
+              rideGroupId,
+              publishSchedule: []
             });
             rides.push(ride2);
           }
         }
+
+        const busDetails = await BusDetails.findOne({ rideGroupId });
+        if (!busDetails) {
+          await BusDetails.create({
+            rideGroupId,
+            busCapacity: selectedBus.capacity
+          });
+        }
       };
 
-      // Call createRides immediately
       await createRides();
-
-      // Start interval for subsequent rides
       const intervalId = setInterval(createRides, intervalMilliseconds);
-
-      // Return the intervalId in the response so it can be cleared if needed
       res.status(200).json({ rides, intervalId });
     } else {
-      // If the schedule type is not 'interval', create rides as usual based on the provided schedule
+      
       for (let i = 0; i < stations.length - 1; i++) {
         for (let j = i + 1; j < stations.length; j++) {
           const ridePrice = price || calculateRidePrice([stations[i], stations[j]]);
 
-          // Create ride objects
           const ride1 = await Ride.create({
             bus: selectedBus,
             stations: [stations[i], stations[j]],
             time,
             price: ridePrice ? ridePrice : null,
             user_id,
-            publishSchedule: schedule.type === 'scheduled' ? schedule.times : [] // Add publish schedule if provided
+            rideGroupId,
+            publishSchedule: schedule.type === 'scheduled' ? schedule.times : []
           });
           rides.push(ride1);
 
@@ -197,10 +209,19 @@ const createRide = async (req, res) => {
             time,
             price: ridePrice ? ridePrice : null,
             user_id,
-            publishSchedule: schedule.type === 'scheduled' ? schedule.times : [] // Add publish schedule if provided
+            rideGroupId,
+            publishSchedule: schedule.type === 'scheduled' ? schedule.times : []
           });
           rides.push(ride2);
         }
+      }
+
+      const busDetails = await BusDetails.findOne({ rideGroupId });
+      if (!busDetails) {
+        await BusDetails.create({
+          rideGroupId,
+          busCapacity: selectedBus.capacity
+        });
       }
 
       res.status(200).json(rides);
@@ -211,10 +232,14 @@ const createRide = async (req, res) => {
   }
 };
 
+
+module.exports = { createRide };
+
 module.exports = {
   createRide,
   calculateRidePrice,
   getRides,
+  getRideById,
   getAllRides,
   getRide,
 };
