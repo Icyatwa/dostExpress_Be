@@ -21,12 +21,6 @@ app.use((req, res, next) => {
   next()
 })
 
-// routes
-// app.use('/api/user', userRoutes)
-// app.use('/api/bus', busRoutes)
-// app.use('/api/rides', rideRoutes)
-// app.use('/api/details', busDetailsRoutes)
-
 app.use('/api/taximan', userRoutes)
 app.use('/api/cabs', busRoutes)
 app.use('/api/taxis', rideRoutes)
