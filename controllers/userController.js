@@ -1,4 +1,3 @@
-
 // userController.js
 const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
@@ -23,7 +22,7 @@ const signupUser = async (req, res) => {
   try {
     const user = await User.signup(email, password, companyName, accessCode);
     const token = createToken(user._id);
-    res.status(200).json({ email, token }); 
+    res.status(200).json({ email, token });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
